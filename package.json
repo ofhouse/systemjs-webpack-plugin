@@ -1,15 +1,16 @@
 {
-  "name": "systemjs-webpack-plugin",
-  "version": "0.1.0",
-  "description": "Webpack bundling for SystemJS",
-  "main": "systemjs-register-public-modules.js",
-  "license": "MIT",
-  "devDependencies": {
-    "lodash": "^4.14.0",
-    "systemjs": "^0.19.35",
-    "webpack": "^2.1.0-beta.20"
-  },
+  "name": "systemjs-webpack-plugin-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "cd test/example-project && webpack && open test.html"
-  }
+    "serve:wp2": "yarn --cwd packages/webpack2 serve",
+    "serve:wp4": "yarn --cwd packages/webpack4 serve"
+  },
+  "devDependencies": {
+    "serve": "11.1.0"
+  },
+  "license": "MIT"
 }

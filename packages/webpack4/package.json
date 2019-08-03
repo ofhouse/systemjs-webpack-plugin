@@ -1,0 +1,11 @@
+{
+  "name": "webpack4",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "systemjs": "5.0.0",
+    "webpack": "4.39.1",
+    "webpack-cli": "3.3.6"
+  }
+}
