@@ -1,6 +1,8 @@
 var SystemJSRegisterPublicModules = require('../../systemjs-register-public-modules.js');
 
 module.exports = {
+  mode: 'development',
+
   entry: './main.js',
   plugins: [
     new SystemJSRegisterPublicModules({

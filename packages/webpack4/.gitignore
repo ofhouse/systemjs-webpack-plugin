@@ -1,2 +1,1 @@
-test/example-project/out.js
-test/example-project/*.out.js
+test/example-project/dist
