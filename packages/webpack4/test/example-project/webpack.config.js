@@ -9,11 +9,11 @@ module.exports = {
       bundlesConfigForChunks: true, // defaults to true
       registerModules: [
         { filter: 'local', keyname: 'app/[relPath]' },
-        { filter: 'public', keyname: m => m.request }
-      ]
-    })
+        { filter: 'public', keyname: m => m.request },
+      ],
+    }),
   ],
   output: {
-    filename: 'out.js'
-  }
+    filename: 'out.js',
+  },
 };
