@@ -1,12 +1,13 @@
-<!doctype html>
-  <script src="../../node_modules/systemjs/dist/system.src.js"></script>
-  <script src="out.js"></script>
+<!DOCTYPE html>
+<script src="https://unpkg.com/systemjs@5.0.0/dist/system.js"></script>
+<script src="https://unpkg.com/systemjs@5.0.0/dist/extras/named-register.js"></script>
+<script src="dist/out.js"></script>
 
-  <script>
-    System.import('app/a.js').then(console.log.bind(console));
+<script>
+  System.import('app/a.js').then(module => console.log(module.default()));
 
-    // dynamically loads webpack chunk for lodash from SystemJS
-    System.import('lodash').then(function(lodash) {
-      console.log(lodash.mixin);
-    });
-  </script>
+  // dynamically loads webpack chunk for lodash from SystemJS
+  System.import('lodash').then(function(lodash) {
+    console.log(lodash.mixin);
+  });
+</script>

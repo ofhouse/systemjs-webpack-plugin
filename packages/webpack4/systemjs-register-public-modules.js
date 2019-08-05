@@ -74,7 +74,9 @@ class SystemJSRegisterPublicModules {
 
         return Template.asString([
           `// ${PLUGIN_NAME} bootstrap`,
-          `var publicModuleLoaderManifest = ${stringifySparseArray(publicModuleLoaderManifest)};`,
+          `var publicModuleLoaderManifest = JSON.parse('${JSON.stringify(
+            manifest.registerModules
+          )}');`,
           `var publicESModules = ${stringifySparseArray(publicESModules)};`,
           bundlesConfigForChunks
             ? `var publicModuleChunks = ${stringifySparseArray(manifest.chunks)};`
@@ -84,11 +86,78 @@ class SystemJSRegisterPublicModules {
       });
 
       mainTemplate.hooks.addModule.tap(PLUGIN_NAME, source => {
-        return Template.asString([source, '', `// ${PLUGIN_NAME} addModule`]);
+        return Template.asString([
+          source,
+          `// ${PLUGIN_NAME} addModule`,
+          'defineIfPublicSystemJSModule(moduleId);',
+        ]);
       });
 
       mainTemplate.hooks.requireExtensions.tap(PLUGIN_NAME, (source, chunk, hash) => {
-        return Template.asString([source, '', `// ${PLUGIN_NAME} requireExtensions`]);
+        const { bundlesConfigForChunks } = this;
+
+        let output = [source, '', `// ${PLUGIN_NAME} requireExtensions`];
+
+        if (bundlesConfigForChunks) {
+          const chunkMaps = chunk.getChunkMaps();
+          const { chunkFilename } = compilation.outputOptions;
+
+          output.push('var systemJSBundlesConfig = {};');
+          output.push('for (var chunkId in publicModuleChunks) {');
+          output.push(
+            Template.indent([
+              'var moduleIds = publicModuleChunks[chunkId];',
+              'var moduleNames = [];',
+              'for (var i = 0; i < moduleIds.length; i++)',
+              Template.indent(['moduleNames.push(publicModuleLoaderManifest[moduleIds[i]]);']),
+            ])
+          );
+          output.push('}');
+        }
+
+        output.push('function defineIfPublicSystemJSModule(moduleId) {');
+        output.push('var publicKey = publicModuleLoaderManifest[moduleId];');
+        output.push('if (publicKey)');
+        output.push(
+          Template.indent([
+            'System.register(publicKey, [], function($__exports) {',
+            // this could be moved into execution scope
+            Template.indent([
+              'return {',
+              Template.indent([
+                'execute: function () {',
+                Template.indent([`$__exports("default", ${mainTemplate.requireFn}.n(moduleId));`]),
+                '}',
+              ]),
+              '};',
+            ]),
+            '});',
+
+            // 'if (publicESModules[moduleId])',
+            // Template.indent([
+            //   'System.register(publicKey, [], function($__export) {',
+            //   // this could be moved into execution scope
+            //   Template.indent(['$__export(__webpack_require__(moduleId));']),
+            //   '});',
+            // ]),
+            // 'else',
+            // Template.indent([
+            //   'System.registerDynamic(publicKey, [], false, function() {',
+            //   Template.indent(['return __webpack_require__(moduleId);']),
+            //   '});',
+            // ]),
+          ])
+        );
+        output.push('}');
+        output.push('for (var moduleId in modules)');
+        output.push(
+          Template.indent([
+            'if (Object.prototype.hasOwnProperty.call(modules, moduleId))',
+            Template.indent(['defineIfPublicSystemJSModule(moduleId);']),
+          ])
+        );
+
+        return Template.asString(output);
       });
     });
   }
