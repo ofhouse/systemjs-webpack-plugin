@@ -79,7 +79,7 @@ class SystemJSRegisterPublicModules {
           )}');`,
           `var publicESModules = ${stringifySparseArray(publicESModules)};`,
           bundlesConfigForChunks
-            ? `var publicModuleChunks = ${stringifySparseArray(manifest.chunks)};`
+            ? `var publicModuleChunks = JSON.parse('${JSON.stringify(manifest.chunks)}');`
             : '',
           source,
         ]);
@@ -99,17 +99,35 @@ class SystemJSRegisterPublicModules {
         let output = [source, '', `// ${PLUGIN_NAME} requireExtensions`];
 
         if (bundlesConfigForChunks) {
-          const chunkMaps = chunk.getChunkMaps();
-          const { chunkFilename } = compilation.outputOptions;
-
-          output.push('var systemJSBundlesConfig = {};');
+          // Uses the dynamic import strategy from webpack here
+          // https://github.com/webpack/webpack/blob/945a9514ca23dfa3438df2ca7abd1238a2ea0c72/lib/RuntimeTemplate.js#L125
           output.push('for (var chunkId in publicModuleChunks) {');
           output.push(
             Template.indent([
-              'var moduleIds = publicModuleChunks[chunkId];',
-              'var moduleNames = [];',
-              'for (var i = 0; i < moduleIds.length; i++)',
-              Template.indent(['moduleNames.push(publicModuleLoaderManifest[moduleIds[i]]);']),
+              'publicModuleChunks[chunkId].forEach(moduleId => {',
+              Template.indent([
+                // Need to store the chunkId here because otherwise it gets changed by the
+                // outer for-loop
+                'var internalChunkId = chunkId;',
+                'System.register(publicModuleLoaderManifest[moduleId], [], function($__exports) {',
+                Template.indent([
+                  'return {',
+                  Template.indent([
+                    'execute: function () {',
+                    Template.indent([
+                      `return ${mainTemplate.requireFn}.e(internalChunkId)`,
+                      `.then(${mainTemplate.requireFn}.bind(null, moduleId))`,
+                      '.then(function (m) {',
+                      Template.indent([`$__exports("default", m);`]),
+                      '});',
+                    ]),
+                    '}',
+                  ]),
+                  '};',
+                ]),
+                '});',
+              ]),
+              '});',
             ])
           );
           output.push('}');
@@ -126,7 +144,7 @@ class SystemJSRegisterPublicModules {
               'return {',
               Template.indent([
                 'execute: function () {',
-                Template.indent([`$__exports("default", ${mainTemplate.requireFn}.n(moduleId));`]),
+                Template.indent([`$__exports("default", ${mainTemplate.requireFn}(moduleId));`]),
                 '}',
               ]),
               '};',
@@ -149,13 +167,15 @@ class SystemJSRegisterPublicModules {
           ])
         );
         output.push('}');
-        output.push('for (var moduleId in modules)');
+        output.push('for (var moduleId in modules) {');
         output.push(
           Template.indent([
-            'if (Object.prototype.hasOwnProperty.call(modules, moduleId))',
+            'if (Object.prototype.hasOwnProperty.call(modules, moduleId)) {',
             Template.indent(['defineIfPublicSystemJSModule(moduleId);']),
+            '}',
           ])
         );
+        output.push('}');
 
         return Template.asString(output);
       });
@@ -182,7 +202,7 @@ class SystemJSRegisterPublicModules {
     let manifest = {
       registerModules: {},
       esModules: {},
-      chunks: [],
+      chunks: {},
     };
     let existingKeys = [];
     // let path = outputOptions.path;

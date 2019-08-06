@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <script src="https://unpkg.com/systemjs@5.0.0/dist/system.js"></script>
 <script src="https://unpkg.com/systemjs@5.0.0/dist/extras/named-register.js"></script>
+
 <script src="dist/out.js"></script>
 
 <script>
@@ -8,6 +9,8 @@
 
   // dynamically loads webpack chunk for lodash from SystemJS
   System.import('lodash').then(function(lodash) {
-    console.log(lodash.mixin);
+
+    console.log('Lodash 1', lodash.default.uniqueId());
+    console.log('Lodash 2', lodash.default.uniqueId());
   });
 </script>

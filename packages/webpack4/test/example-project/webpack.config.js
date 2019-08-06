@@ -4,6 +4,11 @@ module.exports = {
   mode: 'development',
 
   entry: './main.js',
+
+  module: {
+    rules: [{ parser: { system: false } }],
+  },
+
   plugins: [
     new SystemJSRegisterPublicModules({
       bundlesConfigForChunks: true, // defaults to true
@@ -14,6 +19,7 @@ module.exports = {
     }),
   ],
   output: {
+    publicPath: '/test/example-project/dist/',
     filename: 'out.js',
   },
 };
